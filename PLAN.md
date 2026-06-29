@@ -71,6 +71,8 @@ Errors: 200 OK with `body.error = {code, info}` OR HTTP 429 on rate-limit.
       "last_count": <int>,
       "max_count": <int>,
       "min_count": <int>,
+      "unique_flight_numbers": ["VF1", "VF2", ...],
+      "unique_flights": <int>,
       "by_origin_latest": { "<IATA>": <count> }
     }
   ]
@@ -79,7 +81,7 @@ Errors: 200 OK with `body.error = {code, info}` OR HTTP 429 on rate-limit.
 Mutation rules:
 - latest → overwritten each run
 - snapshots → append-only; trim to last 60 entries
-- daily → keyed by date_utc; upsert today's row
+- daily → keyed by date_utc; upsert today's row; merge unique flight numbers across snapshots
 - meta.api_calls_today_utc → reset to 1 when previous run's UTC date != today
 
 ## scripts/fetch-flights.js — behavior
@@ -121,7 +123,7 @@ jobs:
 Single static file. Chart.js v4 via CDN. Sections:
 1. Header "AJET Flights Dashboard"
 2. Meta line: "Last update: <UTC> · <N> snapshot flights · API calls today: X/3"
-3. Large headline number = data.latest.flight_count
+3. Large headline number = data.daily[last].unique_flights (unique flights today, falls back to latest.flight_count)
 4. Bar chart "Flights by origin (latest snapshot)" — top 10 from data.latest.by_origin
 5. Line chart "Snapshot flight count over time" — last 60 entries from data.snapshots (category axis)
 6. Small table: last 7 entries from data.daily

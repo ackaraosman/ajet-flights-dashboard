@@ -134,10 +134,13 @@ function buildLatest(flights, capturedAtIso) {
   };
 }
 
-function upsertDaily(store, dateUtc, latestBlock) {
+function upsertDaily(store, dateUtc, latestBlock, flightNumbers) {
   const count = latestBlock.flight_count;
   const byOriginLatest = {};
   for (const o of latestBlock.by_origin) byOriginLatest[o.iata] = o.count;
+
+  // Deduplicate flight numbers seen this snapshot
+  const newFlightNumbers = [...new Set(flightNumbers)];
 
   const existing = store.daily.find((row) => row.date_utc === dateUtc);
   if (existing) {
@@ -146,8 +149,13 @@ function upsertDaily(store, dateUtc, latestBlock) {
     existing.max_count = Math.max(existing.max_count, count);
     existing.min_count = Math.min(existing.min_count, count);
     existing.by_origin_latest = byOriginLatest;
+    // Merge unique flight numbers across snapshots
+    const merged = new Set([...(existing.unique_flight_numbers || []), ...newFlightNumbers]);
+    existing.unique_flight_numbers = [...merged].sort();
+    existing.unique_flights = existing.unique_flight_numbers.length;
     return existing;
   }
+  const sorted = newFlightNumbers.sort();
   const row = {
     date_utc: dateUtc,
     snapshot_count: 1,
@@ -155,6 +163,8 @@ function upsertDaily(store, dateUtc, latestBlock) {
     last_count: count,
     max_count: count,
     min_count: count,
+    unique_flight_numbers: sorted,
+    unique_flights: sorted.length,
     by_origin_latest: byOriginLatest,
   };
   store.daily.push(row);
@@ -280,7 +290,8 @@ async function main() {
     store.snapshots = store.snapshots.slice(-MAX_SNAPSHOTS);
   }
 
-  upsertDaily(store, dateUtc, latest);
+  const flightNumbers = flights.map((f) => f.flight);
+  upsertDaily(store, dateUtc, latest, flightNumbers);
 
   updateMeta(store, tsIso, dateUtc, latest.flight_count, 'ok', null);
 

@@ -78,7 +78,7 @@
 
     <div class="headline">
       <div class="num" id="flight-count">–</div>
-      <div class="label" id="flight-count-label">snapshot flights</div>
+      <div class="label" id="flight-count-label">unique flights today</div>
     </div>
 
     <div class="grid">
@@ -103,7 +103,7 @@
       <div id="daily-table-wrap">
         <table>
           <thead>
-            <tr><th>Date (UTC)</th><th>Snapshots</th><th>Last</th><th>Min</th><th>Max</th></tr>
+            <tr><th>Date (UTC)</th><th>Snapshots</th><th>Unique</th><th>Last</th><th>Min</th><th>Max</th></tr>
           </thead>
           <tbody id="daily-tbody"></tbody>
         </table>
@@ -162,14 +162,17 @@
     function renderMeta(data) {
       const meta = data.meta || {};
       const latest = data.latest || {};
+      const daily = Array.isArray(data.daily) ? data.daily : [];
+      const today = daily.length ? daily[daily.length - 1] : null;
       const lastRun = meta.last_run_utc ? fmtUtc(meta.last_run_utc) : 'never';
-      const count = latest.flight_count != null ? latest.flight_count : 0;
+      const snapshotCount = latest.flight_count != null ? latest.flight_count : 0;
+      const uniqueToday = (today && today.unique_flights != null) ? today.unique_flights : snapshotCount;
       const calls = (meta.api_calls_today_utc != null) ? meta.api_calls_today_utc : 0;
       $('meta-line').innerHTML =
         `Last update: <span>${lastRun}</span> · ` +
-        `<span>${count}</span> snapshot flights · ` +
+        `<span>${snapshotCount}</span> snapshot flights · ` +
         `API calls today: <span>${calls}/3</span>`;
-      $('flight-count').textContent = count;
+      $('flight-count').textContent = uniqueToday;
     }
 
     function renderStatusWarning(data) {
@@ -275,6 +278,7 @@
         <tr>
           <td>${row.date_utc}</td>
           <td>${row.snapshot_count}</td>
+          <td>${row.unique_flights != null ? row.unique_flights : '–'}</td>
           <td>${row.last_count}</td>
           <td>${row.min_count}</td>
           <td>${row.max_count}</td>

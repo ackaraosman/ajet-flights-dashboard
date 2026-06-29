@@ -75,4 +75,4 @@ Steps:
 
 ## Notes / deviations
 
-(Record any justified deviation from this plan here, with the reason.)
+- **Unique flight tracking added to daily rows** (2026-06-29): The original PLAN.md daily schema only tracked aggregate snapshot counts (first/last/max/min). Added `unique_flight_numbers` (sorted array of deduplicated flight IATA codes across all snapshots for that day) and `unique_flights` (count of that array). The `upsertDaily()` function now merges flight numbers from each snapshot into the daily row's set. The frontend headline shows unique flights today rather than the raw snapshot count. Reason: the user wants total unique flights per day, not just per-snapshot counts.
