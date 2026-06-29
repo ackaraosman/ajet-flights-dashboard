@@ -1,10 +1,10 @@
 # AJET Flights Dashboard
 
-Static dashboard that shows a snapshot of currently-airborne **AJET** flights (Turkish low-cost carrier, IATA `VF`, formerly AnadoluJet). The data is fetched twice daily by a GitHub Action that calls the AviationStack real-time API and committed back to this repo. GitHub Pages serves the dashboard from the repo root.
+Static dashboard tracking the daily flight count of **AJET** (Turkish low-cost carrier, IATA `VF`, formerly AnadoluJet). One API call per day at 22:00 UTC records the total flight count, committed to this repo and served via GitHub Pages.
 
-> **Important constraint:** AviationStack's free plan is **real-time only** — no historical `flight_date` queries. The dashboard shows *snapshot counts* (active/scheduled/landed flights at the moment of fetch), not a true "daily total." The headline number reads as "snapshot flights" rather than "today's total."
+> **Important:** AviationStack's free plan is **real-time only** — no historical queries. The dashboard records the total flight count at each daily snapshot, building a time series over time.
 >
-> **API budget:** 3 requests/day on the free plan. The workflow uses 2 cron slots (10:00 UTC + 22:00 UTC) and reserves the 3rd as a manual buffer.
+> **API budget:** 1 request/day. The workflow uses a single cron slot at 22:00 UTC.
 
 ## Project structure
 
@@ -12,13 +12,13 @@ Static dashboard that shows a snapshot of currently-airborne **AJET** flights (T
 | --- | --- |
 | `index.html` | Static dashboard (Chart.js v4 via CDN). |
 | `scripts/fetch-flights.js` | Node 20 fetch script. No external deps. |
-| `data/data.json` | Generated snapshot store. Committed each run. |
+| `data/data.json` | Daily time series. Committed each run. |
 | `.github/workflows/fetch-flights.yml` | Scheduled + manual-trigger GitHub Action. |
 | `.nojekyll` | Disables GitHub Pages Jekyll processing. |
 | `.gitignore` | Standard Node ignores plus `data.json.tmp`. |
 | `package.json` | `npm run fetch` → runs the Node script. |
-| `PLAN.md` | Full architecture spec (for future LLMs / handoff). |
-| `TASKS.md` | Ordered checklist for the implementation LLM. |
+| `PLAN.md` | Full architecture spec. |
+| `TASKS.md` | Ordered task checklist. |
 
 ## Manual setup (one-time)
 
@@ -31,22 +31,17 @@ Static dashboard that shows a snapshot of currently-airborne **AJET** flights (T
    Settings → Pages → Build and deployment →
    - Source: *Deploy from a branch*
    - Branch: `main`, Folder: `/ (root)`.
-4. **Approve the first workflow run** when GitHub prompts (one-time security confirmation the first time `.github/workflows/` is added).
+4. **Approve the first workflow run** when GitHub prompts.
 5. (Optional) Trigger a first run manually:
-   Actions → "Fetch AJET flights" → Run workflow → Run workflow.
+   Actions → "Fetch AJET flights" → Run workflow.
 
 ## How to run manually
 
-The cron jobs use 2 of your 3 daily API calls. To use the 3rd call as a buffer (e.g., when you want fresher data):
-
 1. Go to the **Actions** tab.
 2. Select **"Fetch AJET flights"** on the left.
-3. Click **"Run workflow"** → **"Run workflow"** (green button).
+3. Click **"Run workflow"** → **"Run workflow"**.
 
-The workflow will:
-- Run `scripts/fetch-flights.js` with the secret as `AVIATIONSTACK_KEY`.
-- Commit the updated `data/data.json` (commit message contains `[skip ci]` to prevent loops).
-- Within ~1 minute, GitHub Pages will deploy the new dashboard.
+The workflow will run `scripts/fetch-flights.js`, commit the updated `data/data.json`, and GitHub Pages will deploy within ~1 minute.
 
 ## Local development
 
@@ -59,30 +54,19 @@ npm run fetch
 # or: node scripts/fetch-flights.js
 ```
 
-Open `index.html` in a browser to view the dashboard locally. The frontend fetches `./data/data.json` relative to the page.
+Open `index.html` in a browser to view the dashboard locally.
 
 ## Cron schedule (UTC)
 
 | Time | Cron | Notes |
 | --- | --- | --- |
-| 10:00 | `0 10 * * *` | Captures AJET mid-morning European operations. |
-| 22:00 | `0 22 * * *` | Captures end-of-day and early next-day rotations. |
+| 22:00 | `0 22 * * *` | Single daily snapshot of total AJET flight count. |
 
 GitHub-hosted cron may fire 5–15 minutes late; this is normal.
 
 ## Failure handling
 
-If a fetch fails, the workflow still commits a stub `data/data.json` with `meta.last_run_status = "error"` and the error message in `meta.last_run_error`. The dashboard detects this and displays a yellow warning banner so the previous snapshot remains visible.
-
-## Out of scope (v1)
-
-- Historical `flight_date` queries (AviationStack free plan does not support them).
-- Per-flight detail pages or drill-down.
-- Multi-airline support.
-- Local-time conversion (everything shown is UTC).
-- Aircraft/registration information.
-- Status filter UI.
-- Client-side polling.
+If a fetch fails, the workflow still commits a stub `data/data.json` with `meta.last_run_status = "error"`. The dashboard detects this and displays a warning banner.
 
 ## License
 

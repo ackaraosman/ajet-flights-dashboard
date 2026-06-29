@@ -13,17 +13,16 @@
       --text: #e2e8f0;
       --muted: #94a3b8;
       --accent: #f97316;
-      --accent-2: #a855f7;
       --warning: #fbbf24;
       --error: #ef4444;
       --border: #334155;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 20px 64px; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 32px 20px 64px; }
     header h1 { margin: 0 0 4px; font-size: 28px; letter-spacing: -0.5px; }
     header .tagline { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
-    .meta-line { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+    .meta-line { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
     .meta-line span { color: var(--text); }
     .headline {
       background: var(--card);
@@ -38,20 +37,16 @@
     }
     .headline .num { font-size: 64px; font-weight: 700; color: var(--accent); line-height: 1; }
     .headline .label { font-size: 16px; color: var(--muted); }
-    .grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
-    @media (min-width: 800px) { .grid { grid-template-columns: 1fr 1fr; } }
     .card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 20px;
+      margin-bottom: 20px;
     }
     .card h2 { margin: 0 0 12px; font-size: 16px; color: var(--text); font-weight: 600; }
-    .chart-container { position: relative; height: 320px; }
+    .chart-container { position: relative; height: 380px; }
     .placeholder { color: var(--muted); font-size: 14px; text-align: center; padding: 24px 0; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
-    th { color: var(--muted); font-weight: 500; }
     .banner {
       padding: 12px 16px;
       border-radius: 8px;
@@ -69,7 +64,7 @@
   <div class="wrap">
     <header>
       <h1>AJET Flights Dashboard</h1>
-      <div class="tagline">Snapshot of currently-airborne AJET (IATA <code>VF</code>) flights, refreshed twice daily.</div>
+      <div class="tagline">Daily flight count for AJET (IATA <code>VF</code>), recorded each day at 22:00 UTC.</div>
     </header>
 
     <div id="banner" class="banner"></div>
@@ -78,41 +73,19 @@
 
     <div class="headline">
       <div class="num" id="flight-count">–</div>
-      <div class="label" id="flight-count-label">unique flights today</div>
+      <div class="label" id="flight-count-label">flights today</div>
     </div>
 
-    <div class="grid">
-      <div class="card">
-        <h2>Flights by origin (latest snapshot)</h2>
-        <div class="chart-container">
-          <canvas id="chart-origin"></canvas>
-        </div>
-        <div id="chart-origin-empty" class="placeholder" style="display:none">No origin data in latest snapshot.</div>
+    <div class="card">
+      <h2>Daily flight count</h2>
+      <div class="chart-container">
+        <canvas id="chart-daily"></canvas>
       </div>
-      <div class="card">
-        <h2>Snapshot flight count over time</h2>
-        <div class="chart-container">
-          <canvas id="chart-trend"></canvas>
-        </div>
-        <div id="chart-trend-empty" class="placeholder" style="display:none">Waiting for second snapshot — the line chart appears after the second scheduled run.</div>
-      </div>
-    </div>
-
-    <div class="card" style="margin-top:20px">
-      <h2>Recent daily rollups (last 7)</h2>
-      <div id="daily-table-wrap">
-        <table>
-          <thead>
-            <tr><th>Date (UTC)</th><th>Snapshots</th><th>Unique</th><th>Last</th><th>Min</th><th>Max</th></tr>
-          </thead>
-          <tbody id="daily-tbody"></tbody>
-        </table>
-      </div>
-      <div id="daily-empty" class="placeholder" style="display:none">No daily rollups yet.</div>
+      <div id="chart-daily-empty" class="placeholder" style="display:none">Waiting for data — the chart appears after the first scheduled run at 22:00 UTC.</div>
     </div>
 
     <footer>
-      Data source: AviationStack (real-time API, free plan). 3 requests/day budget: 2 scheduled + 1 manual buffer.
+      Data source: AviationStack (real-time API, free plan). One API call per day at 22:00 UTC.
     </footer>
   </div>
 
@@ -133,12 +106,6 @@
       el.style.display = 'none';
     }
 
-    function renderError(msg) {
-      $('meta-line').textContent = 'Could not load data.';
-      $('flight-count').textContent = '–';
-      showBanner('error', msg);
-    }
-
     function fmtUtc(iso) {
       if (!iso) return '–';
       return iso.replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
@@ -148,7 +115,7 @@
       const res = await fetch(`./data/data.json?_=${Date.now()}`, { cache: 'no-store' });
       if (!res.ok) {
         if (res.status === 404) {
-          throw new Error('data.json not found yet — the first scheduled run has not completed. Check back later.');
+          throw new Error('data.json not found yet — the first scheduled run has not completed.');
         }
         throw new Error(`Failed to fetch data.json (HTTP ${res.status}).`);
       }
@@ -161,35 +128,30 @@
 
     function renderMeta(data) {
       const meta = data.meta || {};
-      const latest = data.latest || {};
       const daily = Array.isArray(data.daily) ? data.daily : [];
-      const today = daily.length ? daily[daily.length - 1] : null;
       const lastRun = meta.last_run_utc ? fmtUtc(meta.last_run_utc) : 'never';
-      const snapshotCount = latest.flight_count != null ? latest.flight_count : 0;
-      const uniqueToday = (today && today.unique_flights != null) ? today.unique_flights : snapshotCount;
-      const calls = (meta.api_calls_today_utc != null) ? meta.api_calls_today_utc : 0;
+      const latestCount = daily.length ? daily[daily.length - 1].flight_count : 0;
+      const daysRecorded = daily.length;
       $('meta-line').innerHTML =
-        `Last update: <span>${lastRun}</span> · ` +
-        `<span>${snapshotCount}</span> snapshot flights · ` +
-        `API calls today: <span>${calls}/3</span>`;
-      $('flight-count').textContent = uniqueToday;
+        `Last run: <span>${lastRun}</span> · ` +
+        `<span>${daysRecorded}</span> days recorded`;
+      $('flight-count').textContent = latestCount.toLocaleString();
     }
 
     function renderStatusWarning(data) {
       const meta = data.meta || {};
       if (meta.last_run_status === 'error') {
-        showBanner('warn', `Last fetch failed: ${meta.last_run_error || 'unknown error'}. Showing previous snapshot.`);
+        showBanner('warn', `Last fetch failed: ${meta.last_run_error || 'unknown error'}.`);
       } else {
         clearBanner();
       }
     }
 
-    function renderOriginChart(data) {
-      const latest = data.latest || {};
-      const byOrigin = (latest.by_origin || []).slice(0, 10);
-      const canvas = $('chart-origin');
-      const empty = $('chart-origin-empty');
-      if (!byOrigin.length) {
+    function renderDailyChart(data) {
+      const daily = Array.isArray(data.daily) ? data.daily : [];
+      const canvas = $('chart-daily');
+      const empty = $('chart-daily-empty');
+      if (daily.length < 2) {
         canvas.style.display = 'none';
         empty.style.display = 'block';
         return;
@@ -197,57 +159,22 @@
       empty.style.display = 'none';
       canvas.style.display = 'block';
 
-      new Chart(canvas.getContext('2d'), {
-        type: 'bar',
-        data: {
-          labels: byOrigin.map((o) => o.iata),
-          datasets: [{
-            label: 'Flights',
-            data: byOrigin.map((o) => o.count),
-            backgroundColor: '#f97316',
-            borderRadius: 4,
-          }],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: true, ticks: { color: '#94a3b8', precision: 0 }, grid: { color: '#334155' } },
-            x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
-          },
-        },
-      });
-    }
-
-    function renderTrendChart(data) {
-      const snapshots = Array.isArray(data.snapshots) ? data.snapshots : [];
-      const canvas = $('chart-trend');
-      const empty = $('chart-trend-empty');
-      if (snapshots.length < 2) {
-        canvas.style.display = 'none';
-        empty.style.display = 'block';
-        return;
-      }
-      empty.style.display = 'none';
-      canvas.style.display = 'block';
-
-      const labels = snapshots.map((s) => s.ts.slice(0, 16).replace('T', ' '));
-      const values = snapshots.map((s) => s.count);
+      const labels = daily.map((row) => row.date_utc);
+      const values = daily.map((row) => row.flight_count);
 
       new Chart(canvas.getContext('2d'), {
         type: 'line',
         data: {
           labels,
           datasets: [{
-            label: 'Snapshot flight count',
+            label: 'Flights',
             data: values,
-            borderColor: '#a855f7',
-            backgroundColor: 'rgba(168, 85, 247, 0.1)',
+            borderColor: '#f97316',
+            backgroundColor: 'rgba(249, 115, 22, 0.1)',
             tension: 0.25,
             fill: true,
-            pointRadius: 3,
-            pointHoverRadius: 5,
+            pointRadius: 4,
+            pointHoverRadius: 6,
           }],
         },
         options: {
@@ -255,35 +182,18 @@
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
-            y: { beginAtZero: true, ticks: { color: '#94a3b8', precision: 0 }, grid: { color: '#334155' } },
-            x: { ticks: { color: '#94a3b8', maxRotation: 0, autoSkip: true }, grid: { display: false } },
+            y: {
+              beginAtZero: false,
+              ticks: { color: '#94a3b8', precision: 0 },
+              grid: { color: '#334155' },
+            },
+            x: {
+              ticks: { color: '#94a3b8', maxRotation: 45 },
+              grid: { display: false },
+            },
           },
         },
       });
-    }
-
-    function renderDailyTable(data) {
-      const daily = (Array.isArray(data.daily) ? data.daily : []).slice(-7).reverse();
-      const tbody = $('daily-tbody');
-      const empty = $('daily-empty');
-      const wrap = $('daily-table-wrap');
-      if (!daily.length) {
-        wrap.style.display = 'none';
-        empty.style.display = 'block';
-        return;
-      }
-      wrap.style.display = 'block';
-      empty.style.display = 'none';
-      tbody.innerHTML = daily.map((row) => `
-        <tr>
-          <td>${row.date_utc}</td>
-          <td>${row.snapshot_count}</td>
-          <td>${row.unique_flights != null ? row.unique_flights : '–'}</td>
-          <td>${row.last_count}</td>
-          <td>${row.min_count}</td>
-          <td>${row.max_count}</td>
-        </tr>
-      `).join('');
     }
 
     async function main() {
@@ -292,11 +202,11 @@
         if (!data || !data.meta) throw new Error('data.json is missing the meta block.');
         renderMeta(data);
         renderStatusWarning(data);
-        renderOriginChart(data);
-        renderTrendChart(data);
-        renderDailyTable(data);
+        renderDailyChart(data);
       } catch (err) {
-        renderError(err.message);
+        $('meta-line').textContent = 'Could not load data.';
+        $('flight-count').textContent = '–';
+        showBanner('error', err.message);
         console.error(err);
       }
     }

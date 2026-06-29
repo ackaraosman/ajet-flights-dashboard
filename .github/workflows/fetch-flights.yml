@@ -2,9 +2,8 @@ name: Fetch AJET flights
 
 on:
   schedule:
-    - cron: '0 10 * * *'   # 10:00 UTC daily
-    - cron: '0 22 * * *'   # 22:00 UTC daily
-  workflow_dispatch: {}      # manual trigger; reserve the 3rd daily call
+    - cron: '0 22 * * *'   # 22:00 UTC daily — single daily snapshot
+  workflow_dispatch: {}      # manual trigger
 
 concurrency:
   group: ajet-flights-fetch
