@@ -2,6 +2,7 @@
   "meta": {
     "schema_version": 1,
     "airline_iata": "VF",
+<<<<<<< HEAD
     "last_run_utc": "2026-06-29T15:41:28.815Z",
     "last_run_status": "ok",
     "last_run_flight_count": 100,
@@ -15,6 +16,21 @@
       "scheduled": 79,
       "active": 11,
       "landed": 10
+=======
+    "last_run_utc": "2026-06-29T15:36:05.108Z",
+    "last_run_status": "ok",
+    "last_run_flight_count": 100,
+    "last_run_error": null,
+    "api_calls_today_utc": 1
+  },
+  "latest": {
+    "captured_at_utc": "2026-06-29T15:36:05.108Z",
+    "flight_count": 100,
+    "by_status": {
+      "scheduled": 78,
+      "active": 15,
+      "landed": 7
+>>>>>>> 5b67bbc0926a99298016ee7357d5cac87406cc54
     },
     "by_origin": [
       {
@@ -259,7 +275,7 @@
         "flight": "VF4602",
         "origin": "BJV",
         "destination": "COV",
-        "status": "scheduled"
+        "status": "active"
       },
       {
         "flight": "VF4205",
@@ -499,13 +515,21 @@
         "flight": "VF600",
         "origin": "CAI",
         "destination": "ESB",
+<<<<<<< HEAD
         "status": "landed"
+=======
+        "status": "active"
+>>>>>>> 5b67bbc0926a99298016ee7357d5cac87406cc54
       },
       {
         "flight": "VF508",
         "origin": "BEG",
         "destination": "ESB",
+<<<<<<< HEAD
         "status": "landed"
+=======
+        "status": "active"
+>>>>>>> 5b67bbc0926a99298016ee7357d5cac87406cc54
       },
       {
         "flight": "VF578",
@@ -517,7 +541,11 @@
         "flight": "VF4032",
         "origin": "ESB",
         "destination": "ADB",
+<<<<<<< HEAD
         "status": "active"
+=======
+        "status": "landed"
+>>>>>>> 5b67bbc0926a99298016ee7357d5cac87406cc54
       },
       {
         "flight": "VF4242",
@@ -667,7 +695,11 @@
         "flight": "VF4031",
         "origin": "ADB",
         "destination": "ESB",
+<<<<<<< HEAD
         "status": "landed"
+=======
+        "status": "active"
+>>>>>>> 5b67bbc0926a99298016ee7357d5cac87406cc54
       },
       {
         "flight": "VF26",
@@ -691,7 +723,11 @@
         "flight": "VF4109",
         "origin": "AJI",
         "destination": "ESB",
+<<<<<<< HEAD
         "status": "landed"
+=======
+        "status": "active"
+>>>>>>> 5b67bbc0926a99298016ee7357d5cac87406cc54
       },
       {
         "flight": "VF3351",
@@ -739,6 +775,7 @@
   },
   "snapshots": [
     {
+<<<<<<< HEAD
       "ts": "2026-06-29T15:35:00.232Z",
       "count": 100
     },
@@ -748,13 +785,20 @@
     },
     {
       "ts": "2026-06-29T15:41:28.815Z",
+=======
+      "ts": "2026-06-29T15:36:05.108Z",
+>>>>>>> 5b67bbc0926a99298016ee7357d5cac87406cc54
       "count": 100
     }
   ],
   "daily": [
     {
       "date_utc": "2026-06-29",
+<<<<<<< HEAD
       "snapshot_count": 3,
+=======
+      "snapshot_count": 1,
+>>>>>>> 5b67bbc0926a99298016ee7357d5cac87406cc54
       "first_count": 100,
       "last_count": 100,
       "max_count": 100,
@@ -789,6 +833,7 @@
         "IGD": 1,
         "AJI": 1,
         "CPH": 1
+<<<<<<< HEAD
       },
       "unique_flight_numbers": [
         "VF131",
@@ -893,6 +938,9 @@
         "VF91"
       ],
       "unique_flights": 100
+=======
+      }
+>>>>>>> 5b67bbc0926a99298016ee7357d5cac87406cc54
     }
   ]
 }
