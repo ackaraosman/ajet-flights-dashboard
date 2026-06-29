@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "schema_version": 1,
+    "airline_iata": "VF",
+    "last_run_utc": null,
+    "last_run_status": "ok",
+    "last_run_flight_count": 0,
+    "last_run_error": null,
+    "api_calls_today_utc": 0
+  },
+  "latest": null,
+  "snapshots": [],
+  "daily": []
+}

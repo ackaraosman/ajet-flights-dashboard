@@ -1,0 +1,12 @@
+{
+  "name": "ajet-flights-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static dashboard showing AJET (IATA VF) flight activity, refreshed twice daily by a GitHub Action that calls the AviationStack real-time API. Deployed via GitHub Pages.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "fetch": "node scripts/fetch-flights.js"
+  }
+}

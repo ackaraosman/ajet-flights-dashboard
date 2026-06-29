@@ -1,0 +1,38 @@
+name: Fetch AJET flights
+
+on:
+  schedule:
+    - cron: '0 10 * * *'   # 10:00 UTC daily
+    - cron: '0 22 * * *'   # 22:00 UTC daily
+  workflow_dispatch: {}      # manual trigger; reserve the 3rd daily call
+
+concurrency:
+  group: ajet-flights-fetch
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      AVIATIONSTACK_KEY: ${{ secrets.AVIATIONSTACK_KEY }}
+      DATA_PATH: data/data.json
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch and write data.json
+        run: node scripts/fetch-flights.js
+
+      - name: Commit data.json
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore: refresh AJET flight snapshot [skip ci]'
+          file_pattern: 'data/data.json'
