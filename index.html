@@ -147,6 +147,11 @@
       }
     }
 
+    function parseUtcDate(dateStr) {
+      const [year, month, day] = dateStr.split('-');
+      return new Date(Date.UTC(year, month - 1, day));
+    }
+
     function renderDailyChart(data) {
       const daily = Array.isArray(data.daily) ? data.daily : [];
       const canvas = $('chart-daily');
@@ -170,25 +175,95 @@
             label: 'Flights',
             data: values,
             borderColor: '#f97316',
-            backgroundColor: 'rgba(249, 115, 22, 0.1)',
-            tension: 0.25,
+            borderWidth: 3,
+            backgroundColor: function(context) {
+              const chart = context.chart;
+              const {ctx, chartArea} = chart;
+              if (!chartArea) return null;
+              const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+              gradient.addColorStop(0, 'rgba(249, 115, 22, 0.25)');
+              gradient.addColorStop(1, 'rgba(249, 115, 22, 0.0)');
+              return gradient;
+            },
+            tension: 0.3,
             fill: true,
-            pointRadius: 4,
-            pointHoverRadius: 6,
+            pointBackgroundColor: '#f97316',
+            pointBorderColor: '#1e293b',
+            pointBorderWidth: 2,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            pointHoverBackgroundColor: '#f97316',
+            pointHoverBorderColor: '#ffffff',
+            pointHoverBorderWidth: 2,
           }],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1e293b',
+              titleColor: '#e2e8f0',
+              bodyColor: '#f97316',
+              borderColor: '#334155',
+              borderWidth: 1,
+              padding: 12,
+              cornerRadius: 8,
+              boxPadding: 4,
+              usePointStyle: true,
+              callbacks: {
+                title: function(context) {
+                  const dateStr = context[0].label;
+                  const date = parseUtcDate(dateStr);
+                  return date.toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    timeZone: 'UTC'
+                  });
+                },
+                label: function(context) {
+                  return ` Flights: ${context.raw.toLocaleString()}`;
+                }
+              }
+            }
+          },
           scales: {
             y: {
               beginAtZero: false,
-              ticks: { color: '#94a3b8', precision: 0 },
-              grid: { color: '#334155' },
+              ticks: {
+                color: '#94a3b8',
+                precision: 0,
+                callback: function(value) {
+                  return value.toLocaleString();
+                }
+              },
+              grid: {
+                color: 'rgba(51, 65, 85, 0.4)',
+                borderDash: [5, 5],
+                drawTicks: false,
+              },
             },
             x: {
-              ticks: { color: '#94a3b8', maxRotation: 45 },
+              ticks: {
+                color: '#94a3b8',
+                maxRotation: 45,
+                callback: function(val, index) {
+                  const dateStr = this.getLabelForValue(val);
+                  const date = parseUtcDate(dateStr);
+                  return date.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    timeZone: 'UTC'
+                  });
+                }
+              },
               grid: { display: false },
             },
           },
