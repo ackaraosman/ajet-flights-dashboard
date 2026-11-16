@@ -2,7 +2,7 @@
   "meta": {
     "schema_version": 2,
     "airline_iata": "VF",
-    "last_run_utc": "2026-11-15T01:22:39.744Z",
+    "last_run_utc": "2026-11-16T01:26:51.712Z",
     "last_run_status": "ok",
     "last_run_error": null
   },
@@ -534,6 +534,10 @@
     {
       "date_utc": "2026-11-15",
       "flight_count": 567
+    },
+    {
+      "date_utc": "2026-11-16",
+      "flight_count": 571
     }
   ]
 }
